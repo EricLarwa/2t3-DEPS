@@ -1,3 +1,5 @@
+# Distributed Event Streaming System Architecture
+
 # 1. Goals & Non-Goals
 
 ## Goals

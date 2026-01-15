@@ -3,7 +3,37 @@ package broker
 import (
 	"fmt"
 	"os"
+	"sync"
 )
+
+// Broker manages topics, partitions, and consumer groups.
+type Broker struct {
+	port           int
+	topics         map[string]*Topic
+	consumerGroups map[string]*ConsumerGroup
+	offsets        *ConsumerGroupOffsets
+	dataDir        string
+	httpServer     *HTTPServer
+	metadata       *MetadataManager
+
+	// Mutex to protect concurrent access to broker state
+	mu sync.RWMutex
+}
+
+// NewBroker creates a new Broker instance.
+func NewBroker(port int, dataDir string) *Broker {
+	metadataPath := fmt.Sprintf("%s/metadata.json", dataDir)
+	return &Broker{
+		port:           port,
+		topics:         make(map[string]*Topic),
+		consumerGroups: make(map[string]*ConsumerGroup),
+		offsets: &ConsumerGroupOffsets{
+			offsets: make(map[string]int64),
+		},
+		dataDir:  dataDir,
+		metadata: NewMetadataManager(metadataPath),
+	}
+}
 
 // Initialize the broker and begin accepting HTTP requests.
 func (b *Broker) Start() error {
@@ -12,11 +42,10 @@ func (b *Broker) Start() error {
 		return fmt.Errorf("failed to create data directory: %w", err)
 	}
 
-	// TODO: Load persisted metadata in step 3 (Metadata Manager)
-	// This would:
-	// - Read topics.json from disk
-	// - Read consumer group offsets from disk
-	// - Populate b.topics and b.offsets
+	// Load metadata
+	if err := b.metadata.Load(); err != nil {
+		return fmt.Errorf("failed to load metadata: %w", err)
+	}
 
 	// Create HTTP server
 	b.httpServer = NewHTTPServer(b, b.port)
@@ -31,7 +60,7 @@ func (b *Broker) AddTopic(name string, numPartitions int) error {
 	defer b.mu.Unlock()
 
 	// Check if topic already exists
-	if _, exists := b.topics[name]; exists {
+	if _, exists := b.metadata.GetTopics()[name]; exists {
 		return fmt.Errorf("topic %q already exists", name)
 	}
 
@@ -53,13 +82,17 @@ func (b *Broker) AddTopic(name string, numPartitions int) error {
 		}
 
 		topic.Partitions[i] = partition
-
-		// TODO: In step 4 (Log Storage Engine), we'll:
-		// - Create the log file on disk
-		// - Load any existing events from disk
 	}
 
-	b.topics[name] = topic
+	if err := b.metadata.AddTopic(name, topic); err != nil {
+		return err
+	}
+
+	// Persist metadata
+	if err := b.metadata.Save(); err != nil {
+		return fmt.Errorf("failed to save metadata: %w", err)
+	}
+
 	return nil
 }
 

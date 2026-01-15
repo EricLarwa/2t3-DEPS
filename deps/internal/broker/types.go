@@ -81,38 +81,3 @@ type ConsumerGroup struct {
 	// LastRebalance tracks when the group last rebalanced.
 	LastRebalance time.Time
 }
-
-// main server struct coordinating all components.
-type Broker struct {
-	// Basic config
-	port int
-
-	// Topics indexed by name.
-	mu     sync.RWMutex
-	topics map[string]*Topic
-
-	// Consumer groups indexed by name.
-	consumerGroups map[string]*ConsumerGroup
-
-	// Consumer group offsets tracking.
-	offsets *ConsumerGroupOffsets
-
-	// Data directory path (where log files are stored).
-	dataDir string
-
-	// HTTP server for handling requests.
-	httpServer *HTTPServer
-}
-
-// NewBroker creates a new broker instance with the given configuration.
-func NewBroker(port int, dataDir string) *Broker {
-	return &Broker{
-		port:           port,
-		topics:         make(map[string]*Topic),
-		consumerGroups: make(map[string]*ConsumerGroup),
-		offsets: &ConsumerGroupOffsets{
-			offsets: make(map[string]int64),
-		},
-		dataDir: dataDir,
-	}
-}

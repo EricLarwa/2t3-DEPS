@@ -44,6 +44,11 @@ func (o *OffsetManager) GetOffset(consumerGroup, topic string, partitionID int) 
 
 // Persists the offsets to disk.
 func (o *OffsetManager) save() error {
+	// Skip saving if path is empty (used in testing)
+	if o.path == "" {
+		return nil
+	}
+
 	file, err := os.Create(o.path)
 	if err != nil {
 		return fmt.Errorf("failed to create offsets file: %w", err)

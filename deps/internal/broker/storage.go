@@ -63,7 +63,11 @@ func (l *LogStorage) Read(startOffset int64, maxBytes int) ([]*StoredEvent, erro
 
 	buffer := make([]byte, maxBytes)
 	n, err := l.file.Read(buffer)
-	if err != nil && n == 0 {
+	if n == 0 {
+		// Return empty slice for empty reads (EOF)
+		return make([]*StoredEvent, 0), nil
+	}
+	if err != nil && err.Error() != "EOF" {
 		return nil, fmt.Errorf("failed to read from log file: %w", err)
 	}
 

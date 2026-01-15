@@ -1,0 +1,1 @@
+{"orders":{"Name":"orders","NumPartitions":3,"Partitions":{"0":{"Topic":"orders","ID":0},"1":{"Topic":"orders","ID":1},"2":{"Topic":"orders","ID":2}}},"payments":{"Name":"payments","NumPartitions":2,"Partitions":{"0":{"Topic":"payments","ID":0},"1":{"Topic":"payments","ID":1}}},"shipments":{"Name":"shipments","NumPartitions":1,"Partitions":{"0":{"Topic":"shipments","ID":0}}}}

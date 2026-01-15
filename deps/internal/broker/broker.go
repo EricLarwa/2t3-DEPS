@@ -55,6 +55,21 @@ func (b *Broker) Start() error {
 		return fmt.Errorf("failed to load metadata: %w", err)
 	}
 
+	// Populate in-memory topics and initialize log storage for each partition
+	for topicName, topic := range b.metadata.GetTopics() {
+		b.topics[topicName] = topic
+
+		// Initialize log storage for each partition
+		for partitionID, partition := range topic.Partitions {
+			logPath := fmt.Sprintf("%s/%s/partition-%d.log", b.dataDir, topicName, partitionID)
+			logStorage, err := NewLogStorage(logPath)
+			if err != nil {
+				return fmt.Errorf("failed to initialize log storage for partition %d: %w", partitionID, err)
+			}
+			partition.logStorage = logStorage
+		}
+	}
+
 	// Load offsets
 	if err := b.offsetManager.load(); err != nil {
 		return fmt.Errorf("failed to load offsets: %w", err)
@@ -75,6 +90,12 @@ func (b *Broker) AddTopic(name string, numPartitions int) error {
 	// Check if topic already exists
 	if _, exists := b.metadata.GetTopics()[name]; exists {
 		return fmt.Errorf("topic %q already exists", name)
+	}
+
+	// Create topic directory
+	topicDir := fmt.Sprintf("%s/%s", b.dataDir, name)
+	if err := os.MkdirAll(topicDir, 0755); err != nil {
+		return fmt.Errorf("failed to create topic directory: %w", err)
 	}
 
 	// Create topic and its partitions

@@ -127,5 +127,6 @@ func (p *PartitionManager) FetchEvents(partition *Partition, startOffset int64, 
 
 // Commit the offset for a consumer group, topic, and partition.
 func (p *PartitionManager) CommitOffset(consumerGroup, topic string, partitionID int, offset int64) error {
-	return nil
+	// Update PartitionManager.CommitOffset to use OffsetManager
+	return p.broker.offsetManager.CommitOffset(consumerGroup, topic, partitionID, offset)
 }

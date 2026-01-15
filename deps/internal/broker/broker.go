@@ -16,14 +16,13 @@ type Broker struct {
 	httpServer     *HTTPServer
 	metadata       *MetadataManager
 
-	// Mutex to protect concurrent access to broker state
 	mu sync.RWMutex
 
-	// PartitionManager handles partition routing and operations.
 	partitionManager *PartitionManager
+
+	offsetManager *OffsetManager
 }
 
-// NewBroker creates a new Broker instance.
 func NewBroker(port int, dataDir string) *Broker {
 	metadataPath := fmt.Sprintf("%s/metadata.json", dataDir)
 	broker := &Broker{
@@ -35,9 +34,10 @@ func NewBroker(port int, dataDir string) *Broker {
 		},
 		dataDir:  dataDir,
 		metadata: NewMetadataManager(metadataPath),
+
+		offsetManager: NewOffsetManager(fmt.Sprintf("%s/offsets.json", dataDir)),
 	}
 
-	// Initialize PartitionManager
 	broker.partitionManager = NewPartitionManager(broker)
 
 	return broker
@@ -53,6 +53,11 @@ func (b *Broker) Start() error {
 	// Load metadata
 	if err := b.metadata.Load(); err != nil {
 		return fmt.Errorf("failed to load metadata: %w", err)
+	}
+
+	// Load offsets
+	if err := b.offsetManager.load(); err != nil {
+		return fmt.Errorf("failed to load offsets: %w", err)
 	}
 
 	// Create HTTP server

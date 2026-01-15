@@ -41,6 +41,9 @@ type Partition struct {
 	// hold all events in memory (loaded from disk on startup).
 	// In a production system, this would be limited (e.g., keep last N events).
 	events []*StoredEvent
+
+	// LogStorage handles event storage for this partition.
+	logStorage *LogStorage
 }
 
 type Topic struct {

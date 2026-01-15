@@ -81,6 +81,13 @@ func (b *Broker) AddTopic(name string, numPartitions int) error {
 			events:        make([]*StoredEvent, 0),
 		}
 
+		// Initialize log storage for each partition
+		logStorage, err := NewLogStorage(partition.logPath)
+		if err != nil {
+			return fmt.Errorf("failed to initialize log storage for partition %d: %w", i, err)
+		}
+		partition.logStorage = logStorage
+
 		topic.Partitions[i] = partition
 	}
 

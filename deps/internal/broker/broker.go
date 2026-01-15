@@ -18,12 +18,15 @@ type Broker struct {
 
 	// Mutex to protect concurrent access to broker state
 	mu sync.RWMutex
+
+	// PartitionManager handles partition routing and operations.
+	partitionManager *PartitionManager
 }
 
 // NewBroker creates a new Broker instance.
 func NewBroker(port int, dataDir string) *Broker {
 	metadataPath := fmt.Sprintf("%s/metadata.json", dataDir)
-	return &Broker{
+	broker := &Broker{
 		port:           port,
 		topics:         make(map[string]*Topic),
 		consumerGroups: make(map[string]*ConsumerGroup),
@@ -33,6 +36,11 @@ func NewBroker(port int, dataDir string) *Broker {
 		dataDir:  dataDir,
 		metadata: NewMetadataManager(metadataPath),
 	}
+
+	// Initialize PartitionManager
+	broker.partitionManager = NewPartitionManager(broker)
+
+	return broker
 }
 
 // Initialize the broker and begin accepting HTTP requests.

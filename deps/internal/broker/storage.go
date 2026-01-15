@@ -80,7 +80,7 @@ func (l *LogStorage) Close() error {
 	return l.file.Close()
 }
 
-// serializeEvent converts a StoredEvent to binary format.
+// Convert a StoredEvent to binary format.
 func serializeEvent(event *StoredEvent) ([]byte, error) {
 	// Example serialization: [offset][timestamp][key][payload_length][payload_bytes]
 	keyBytes := []byte(event.Key)
@@ -97,7 +97,7 @@ func serializeEvent(event *StoredEvent) ([]byte, error) {
 	return buffer, nil
 }
 
-// deserializeEvents converts binary data to a slice of StoredEvent.
+// Convert binary data to a slice of StoredEvent.
 func deserializeEvents(data []byte) ([]*StoredEvent, error) {
 	// Example deserialization logic
 	var events []*StoredEvent

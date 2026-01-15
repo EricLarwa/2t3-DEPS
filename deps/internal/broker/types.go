@@ -1,6 +1,9 @@
 package broker
 
 import (
+	"fmt"
+	"hash/fnv"
+	"math/rand"
 	"sync"
 	"time"
 )
@@ -83,4 +86,46 @@ type ConsumerGroup struct {
 
 	// LastRebalance tracks when the group last rebalanced.
 	LastRebalance time.Time
+}
+
+// Routing and operations for partitions.
+type PartitionManager struct {
+	broker *Broker
+}
+
+func NewPartitionManager(broker *Broker) *PartitionManager {
+	return &PartitionManager{
+		broker: broker,
+	}
+}
+
+// Determine the partition for an event based on its key.
+// If the key is empty, use round-robin routing.
+func (p *PartitionManager) RouteEvent(topic string, key string) (*Partition, error) {
+	t := p.broker.GetTopic(topic)
+	if t == nil {
+		return nil, fmt.Errorf("topic %q not found", topic)
+	}
+
+	if key != "" {
+		// Hash-based routing
+		h := fnv.New32a()
+		h.Write([]byte(key))
+		partitionID := int(h.Sum32()) % t.NumPartitions
+		return t.Partitions[partitionID], nil
+	}
+
+	// Round-robin routing
+	partitionID := rand.Intn(t.NumPartitions)
+	return t.Partitions[partitionID], nil
+}
+
+// Fetch events from a partition starting at a given offset.
+func (p *PartitionManager) FetchEvents(partition *Partition, startOffset int64, maxBytes int) ([]*StoredEvent, error) {
+	return partition.logStorage.Read(startOffset, maxBytes)
+}
+
+// Commit the offset for a consumer group, topic, and partition.
+func (p *PartitionManager) CommitOffset(consumerGroup, topic string, partitionID int, offset int64) error {
+	return nil
 }

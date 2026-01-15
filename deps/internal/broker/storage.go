@@ -110,20 +110,20 @@ func deserializeEvents(data []byte) ([]*StoredEvent, error) {
 		offset := int64(binary.BigEndian.Uint64(data[0:8]))
 		timestamp := int64(binary.BigEndian.Uint64(data[8:16]))
 		keyLength := int(binary.BigEndian.Uint32(data[16:20]))
-		
+
 		// Check if we have enough data for the key
 		if len(data) < 24+keyLength {
 			break
 		}
-		
+
 		key := string(data[20 : 20+keyLength])
 		payloadLength := int(binary.BigEndian.Uint32(data[20+keyLength : 24+keyLength]))
-		
+
 		// Check if we have enough data for the payload
 		if len(data) < 24+keyLength+payloadLength {
 			break
 		}
-		
+
 		payload := data[24+keyLength : 24+keyLength+payloadLength]
 
 		events = append(events, &StoredEvent{
